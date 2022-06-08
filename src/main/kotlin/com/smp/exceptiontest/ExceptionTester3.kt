@@ -13,14 +13,16 @@ import java.util.concurrent.Executors
 object ExceptionTester3 {
     private val singleThreadedDispatcher = Executors.newSingleThreadExecutor { runnable ->
         Thread(runnable).apply {
-            setUncaughtExceptionHandler { _, exception -> println("UncaughtExceptionHandler : $exception") }
+            // Set uncaught exception handler for the thread
+            // setUncaughtExceptionHandler { _, exception -> println("UncaughtExceptionHandler : $exception") }
         }
     }.asCoroutineDispatcher()
     private val testingScope = CoroutineScope(singleThreadedDispatcher)
 
     @JvmStatic
     fun main(args: Array<String>) = runBlocking {
-        Thread.setDefaultUncaughtExceptionHandler { thread, exception -> println("DefaultUncaughtExceptionHandler : $exception") }
+        // Set uncaught exception handler for all threads
+        // Thread.setDefaultUncaughtExceptionHandler { thread, exception -> println("DefaultUncaughtExceptionHandler : $exception") }
         singleThreadedDispatcher.use {
             with(testingScope) {
                 executeTest().join()
@@ -28,11 +30,12 @@ object ExceptionTester3 {
         }
     }
 
-    private fun CoroutineScope.executeTest(): Job =
-        launch(CoroutineName("Coroutine:A")
-                + CoroutineExceptionHandler { _, exception ->
+    private fun CoroutineScope.executeTest(): Job {
+        val exceptionHandler = CoroutineExceptionHandler { _, exception ->
             println("CoroutineExceptionHandler : $exception")
-        }) {
+        }
+        // Set coroutine exception handler
+       return launch(CoroutineName("Coroutine:A") /* + exceptionHandler */) {
 
             launch(CoroutineName("Coroutine:B")) {
 
@@ -53,4 +56,5 @@ object ExceptionTester3 {
 
             }
         }
+    }
 }

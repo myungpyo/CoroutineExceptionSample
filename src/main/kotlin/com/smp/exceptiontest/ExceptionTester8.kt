@@ -10,7 +10,7 @@ import kotlinx.coroutines.*
  * Coroutine:C-1 - Child (created by launch builder)
  * Coroutine:C-2 - Child (created by launch builder), throwing exception.
  */
-object ExceptionTester7 {
+object ExceptionTester8 {
     private val testingScope = CoroutineScope(CoroutineName("TestingScope"))
 
     @JvmStatic
@@ -22,31 +22,31 @@ object ExceptionTester7 {
 
     private fun CoroutineScope.executeTest(): Job =
         launch(CoroutineName("Coroutine:A")) {
+            val jobOfCoroutineA = coroutineContext[Job]
 
-            launch(CoroutineName("Coroutine:B-1")) {
-                repeat(5) {
-                    delay(1000)
-                    log("Processing : ${it + 1} / 3")
-                }
+            launch(CoroutineName("Coroutine:B")
+                    + SupervisorJob(parent = jobOfCoroutineA)
+                    + CoroutineExceptionHandler { _, _ -> jobOfCoroutineA?.cancel() }
+            ) {
 
-            }
-
-            launch(CoroutineName("Coroutine:B-2") + SupervisorJob()) {
                 launch(CoroutineName("Coroutine:C-1")) {
                     repeat(3) {
                         delay(1000)
-                        log("Processing : ${it + 1} / 3")
+                        println("C-1 : Processing : ${it + 1} / 3")
                     }
-                }.invokeOnCompletion { println("C-1 Complete : $it") }
+                }.invokeOnCompletion { println("C-1 Complete : cause : $it") }
 
                 launch(CoroutineName("Coroutine:C-2")) {
                     repeat(6) {
                         delay(500)
-                        log("Processing : ${it + 1} / 5")
+                        println("C-2 : Processing : ${it + 1} / 5")
                         if (it > 0) throw RuntimeException("Something wrong!")
                     }
-                }.invokeOnCompletion { println("C-2 Complete : $it") }
+                }.invokeOnCompletion { println("C-2 Complete : cause : $it") }
 
-            }
+            }.invokeOnCompletion { println("B Complete : cause : $it") }
+
+        }.apply {
+            invokeOnCompletion { println("A Complete : cause : $it") }
         }
 }

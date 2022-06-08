@@ -10,7 +10,7 @@ import kotlinx.coroutines.*
  * Coroutine:C-1 - Child (created by launch builder)
  * Coroutine:C-2 - Child (created by launch builder), throwing exception.
  */
-object ExceptionTester7 {
+object ExceptionTester7E {
     private val testingScope = CoroutineScope(CoroutineName("TestingScope"))
 
     @JvmStatic
@@ -31,13 +31,13 @@ object ExceptionTester7 {
 
             }
 
-            launch(CoroutineName("Coroutine:B-2") + SupervisorJob()) {
+            supervisorScope {
                 launch(CoroutineName("Coroutine:C-1")) {
                     repeat(3) {
                         delay(1000)
                         log("Processing : ${it + 1} / 3")
                     }
-                }.invokeOnCompletion { println("C-1 Complete : $it") }
+                }
 
                 launch(CoroutineName("Coroutine:C-2")) {
                     repeat(6) {
@@ -45,7 +45,7 @@ object ExceptionTester7 {
                         log("Processing : ${it + 1} / 5")
                         if (it > 0) throw RuntimeException("Something wrong!")
                     }
-                }.invokeOnCompletion { println("C-2 Complete : $it") }
+                }
 
             }
         }
